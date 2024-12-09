@@ -1,12 +1,11 @@
+import React, { useState, useEffect } from "react";
 import { useLoaderData } from "@remix-run/react";
 import { LoaderFunction } from "@remix-run/node";
-import React, { useState } from "react";
 import { FiArrowRight } from "react-icons/fi";
 import { IoArrowBackSharp } from "react-icons/io5";
 import QuizScore from "~/components/scoreCard";
-import QuizQuestion from "~/components/questionProps";
+import { MdOutlineAccessTime } from "react-icons/md";
 
-// Define the type for the question data
 interface Question {
   id: number;
   name: string;
@@ -14,7 +13,6 @@ interface Question {
   options: string[];
 }
 
-// Loader function to fetch data from the API
 export const loader: LoaderFunction = async () => {
   const response = await fetch(
     "https://the-trivia-api.com/v2/questions?limit=4"
@@ -24,7 +22,6 @@ export const loader: LoaderFunction = async () => {
   }
   const data = await response.json();
 
-  // Map API response to the required format
   const questions: Question[] = data.map((item: any, index: number) => ({
     id: index + 1,
     name: item.question.text,
@@ -38,7 +35,6 @@ export const loader: LoaderFunction = async () => {
 };
 
 export default function Index() {
-  // Get questions from the loader
   const { questions } = useLoaderData<{ questions: Question[] }>();
   return <ViewUser questions={questions} />;
 }
@@ -53,8 +49,30 @@ const ViewUser: React.FC<ViewUserProps> = ({ questions }) => {
     [key: number]: string;
   }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(120); // 2 minutes timer
 
   const currentQuestion = questions[currentQuestionIndex];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsSubmitted(true); // Submit when timer expires
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
+  };
 
   const handleOptionClick = (option: string) => {
     setSelectedOptions({
@@ -70,6 +88,7 @@ const ViewUser: React.FC<ViewUserProps> = ({ questions }) => {
       setIsSubmitted(true);
     }
   };
+
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
@@ -94,31 +113,40 @@ const ViewUser: React.FC<ViewUserProps> = ({ questions }) => {
   const progressPercentage =
     ((currentQuestionIndex + 1) / questions.length) * 100;
 
-  console.log(currentQuestion, "currentQuestion");
-
   return (
-    <div className="w-full sm:h-[96vh] h-screen flex flex-col items-center sm:mt-5 ">
+    <div className="w-full sm:h-[96vh] h-screen flex flex-col items-center sm:mt-5">
+      {/* Timer Display */}
+      {/* <div className="text-center text-red-500 font-bold text-lg mb-4">
+      <MdOutlineAccessTime /> {formatTime(timeLeft)}
+      </div> */}
+
       {/* Header with progress bar */}
-      <div className=" sm:w-[500px] w-full bg-slate-100 rounded-md h-[60px] flex flex-col justify-center items-center px-4 py-2">
-        <div className="flex justify-between w-full items-center mb-2">
+      <div className="sm:w-[500px] w-full bg-slate-100 rounded-md h-[60px] flex flex-col justify-center items-center px-4 py-2">
+        <div className="flex justify-between w-full items-center ">
           <div className="flex gap-2">
             <IoArrowBackSharp color="gray" onClick={handlePreviousQuestion} />
             <FiArrowRight color="gray" onClick={handleNextQuestion} />
+          </div>
+          <div className=" flex items-center text-red-500 font-bold gap-3 ">
+            <MdOutlineAccessTime color="gray" />
+            <p>{formatTime(timeLeft)}</p>
           </div>
           <div>
             {currentQuestionIndex + 1} / {questions.length}
           </div>
         </div>
       </div>
-      <div className=" sm:w-[500px] w-full bg-gray-300 h-[5px]  overflow-hidden">
+
+      <div className="sm:w-[500px] w-full bg-gray-300 h-[5px] overflow-hidden">
         <div
           className="h-full bg-green-500 transition-all duration-300"
           style={{ width: `${progressPercentage}%` }}
         ></div>
       </div>
-      <div className=" sm:w-[500px] w-full flex p-2  my-3 mt-4">
+
+      <div className="sm:w-[500px] w-full flex p-2 my-3 mt-4">
         <p className="font-semibold md:text-2xl text-[20px] mr-2">Q.</p>
-        <h2 className="font-semibold md:text-[22px] text-[16px] ">
+        <h2 className="font-semibold md:text-[22px] text-[16px]">
           {currentQuestion?.name ?? ""}
         </h2>
       </div>
@@ -138,20 +166,14 @@ const ViewUser: React.FC<ViewUserProps> = ({ questions }) => {
           </div>
         ))}
       </div>
-      {/* <QuizQuestion
-        question={currentQuestion.name}
-        options={currentQuestion.options}
-        handleOptionClick={handleOptionClick}
-        currentQuestion={currentQuestionIndex + 1}
-        totalQuestions={questions.length}
-      /> */}
+
       <button
         onClick={handleNextQuestion}
-        className="w-[400px] mt-4 rounded-md text-center flex justify-center text-white bg-red-400 h-[50px] items-center p-2"
+        className="w-[400px] mt-4 rounded-md text-center flex justify-center text-white bg-red-500 h-[50px] items-center p-2"
         disabled={!selectedOptions[currentQuestion.id]}
       >
         {currentQuestionIndex < questions.length - 1
-          ? "Next Question"
+          ? "Check Your Answer "
           : "Submit"}
       </button>
       <p className="my-3">

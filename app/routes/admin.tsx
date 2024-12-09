@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useDrag, useDrop, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import UserCard from "~/components/card";
 
 type CardType = {
   id: number;
@@ -156,9 +157,14 @@ const DraggableCard: React.FC<{
   return (
     <div
       ref={(node) => drag(drop(node))}
-      className=" bg-purple-500 md:w-[32%]  w-full h-[300px] p-3  rounded-lg text-center font-medium shadow-md cursor-pointer"
+      className="  md:w-[32%]  w-full h-[300px] p-3  rounded-lg text-center font-medium cursor-pointer"
     >
-      {name}
+      <UserCard
+        avatarUrl="https://via.placeholder.com/150"
+        name="John Doe"
+        summary="A passionate developer who loves building web applications and exploring new technologies."
+        createdDate="Created on Dec 8, 2024"
+      />
     </div>
   );
 };
